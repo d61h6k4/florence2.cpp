@@ -1,0 +1,78 @@
+# Enable Bzlmod for every Bazel command
+common --enable_bzlmod
+
+# Basic build settings
+build --jobs auto
+build --define 'absl=1'
+build --define MEDIAPIPE_DISABLE_GPU=1
+build --enable_platform_specific_config
+
+# Enable stack traces
+# test --test_env="GTEST_INSTALL_FAILURE_SIGNAL_HANDLER=1"
+
+# Linux
+build:linux --cxxopt='-std=c++17'
+build:linux --host_cxxopt='-std=c++17'
+build:linux --copt=-w
+# https://github.com/bazelbuild/bazel/issues/20886
+build:linux --noincompatible_sandbox_hermetic_tmp
+
+# windows
+build:windows --cxxopt=/std:c++17
+build:windows --host_cxxopt=/std:c++17
+build:windows --copt=/w
+# For using M_* math constants on Windows with MSVC.
+build:windows --copt=/D_USE_MATH_DEFINES
+build:windows --host_copt=/D_USE_MATH_DEFINES
+
+# macOS
+build:macos --cxxopt='-std=c++17'
+build:macos --host_cxxopt='-std=c++17'
+build:macos --copt=-w
+
+# Suppress most C++ compiler warnings to reduce log size but allow
+# for specific warnings to still be present.
+build:linux --copt="-Wno-all"
+build:linux --copt="-Wno-extra"
+build:linux --copt="-Wno-deprecated"
+build:linux --copt="-Wno-deprecated-declarations"
+build:linux --copt="-Wno-ignored-attributes"
+build:linux --copt="-Wno-array-bounds"
+
+# Add unused-result as an error on Linux.
+build:linux --copt="-Wunused-result"
+build:linux --copt="-Werror=unused-result"
+# Add switch as an error on Linux.
+build:linux --copt="-Wswitch"
+build:linux --copt="-Werror=switch"
+# Required for building with clang
+build:linux --copt="-Wno-error=unused-but-set-variable"
+
+# https://github.com/bazelbuild/rules_foreign_cc/issues/1186
+build:macos --host_action_env=CXXFLAGS=-Wno-int-conversion
+build:macos --action_env=CXXFLAGS=-Wno-int-conversion
+build:macos --host_action_env=CFLAGS=-Wno-int-conversion
+build:macos --action_env=CFLAGS=-Wno-int-conversion
+
+# Turn off maximum stdout size
+build --experimental_ui_max_stdouterr_bytes=-1
+
+# Address sanitizer
+# To use it: bazel build --config asan
+build:asan --strip=never
+build:asan --copt -fsanitize=address
+build:asan --copt -DADDRESS_SANITIZER
+build:asan --copt -O1
+build:asan --copt -g
+build:asan --copt -fno-omit-frame-pointer
+build:asan --linkopt -fsanitize=address
+
+# --config msan: Memory sanitizer
+build:msan --strip=never
+build:msan --copt -fsanitize=memory
+build:msan --copt -DADDRESS_SANITIZER
+build:msan --copt -O1
+build:msan --copt -fno-omit-frame-pointer
+build:msan --linkopt -fsanitize=memory
+
+build:release -c opt
